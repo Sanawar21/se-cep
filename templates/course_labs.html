@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Course - Labs</title>
+    <link rel="stylesheet" href="/static/coursestyles.css">
+    <link rel="stylesheet" href="/static/rubric_viewer.css">
+    <style>
+        .custom-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2d3748;
+            color: white;
+            padding: 0.75em 1.5em;
+            font-family: Arial, sans-serif;
+            border-bottom: 2px solid #4a5568;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .custom-navbar .nav-btn {
+            background-color: #4a5568;
+            border: none;
+            color: white;
+            padding: 0.5em 1em;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .custom-navbar .nav-btn:hover {
+            background-color: #2c5282;
+        }
+
+        .custom-navbar .back-btn {
+            margin-right: auto;
+        }
+
+        .custom-navbar .logout-btn {
+            margin-left: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="custom-navbar">
+        <button class="nav-btn back-btn" onclick="window.location.href='/student_portal'">← Back</button>
+        <h2>Computer & Information Systems Engineering Department</h2>
+        <button class="nav-btn logout-btn" onclick="window.location.href='/logout'">Logout</button>
+    </nav>
+
+    <div class="container">
+        <div class="course-info">
+            <h2><span id="course-name"></span></h2>
+            <p> <span id="course-code"></span></p>
+        </div>
+
+        <h3 class="section-title">Available Labs</h3>
+        <div class="lab-list" id="lab-list">
+            <!-- Labs will be inserted here -->
+        </div>
+        
+        <div id="rubric-section" style="display: none; margin-top: 30px;">
+            <h3 class="section-title">📊 My Rubric Scores</h3>
+            <div id="rubric-cards-container">
+                <!-- Rubric cards will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Rubric View Modal -->
+    <div id="rubric-view-modal" class="rubric-view-modal">
+        <div class="rubric-view-content">
+            <span class="rubric-view-close" onclick="closeRubricModal()">&times;</span>
+            <h2>Rubric Scores</h2>
+            
+            <div class="rubric-summary-view">
+                <h3>Total Score</h3>
+                <div class="rubric-score-display">
+                    <span id="rubric-total-score">0</span> / <span id="rubric-max-score">0</span>
+                </div>
+                <div class="rubric-percentage">
+                    <span id="rubric-percentage">0</span>%
+                </div>
+            </div>
+
+            <h3>Criteria Breakdown</h3>
+            <div id="rubric-criteria-view">
+                <!-- Criteria will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/rubric_viewer.js"></script>
+    <script>
+        const courseCode = window.location.pathname.split("/")[2];  // Extract course_code from URL
+
+
+        document.getElementById("course-code").textContent = courseCode;
+
+        async function fetchLabs() {
+            const response = await fetch(`/api/course_labs/${courseCode}`);
+            const labs = await response.json();
+
+            const labList = document.getElementById("lab-list");
+
+            if (labs.length === 0) {
+                labList.innerHTML = "<p>No labs found for this course.</p>";
+                return;
+            }
+
+            const gradedLabs = [];
+
+            labs.forEach(lab => {
+                const labCard = document.createElement("div");
+                labCard.className = "lab-card";
+                labCard.onclick = () => openLab(courseCode, lab.LAB_NO);
+                labCard.innerHTML = `
+                    <h4>Lab # ${lab.LAB_NO}</h4>
+                    <p class="lab-title">${lab.LAB_TITLE}</p>
+                    <p class="lab-title">Status: ${lab.SUBMISSION_STATUS !== null ? lab.SUBMISSION_STATUS : 'Missing'}</p>
+                `;
+                labList.appendChild(labCard);
+                
+                // Collect graded labs for rubric section
+                if (lab.SUBMISSION_ID && (lab.SUBMISSION_STATUS === 'Graded' || lab.SUBMISSION_STATUS === 'Checked')) {
+                    gradedLabs.push(lab);
+                }
+            });
+
+            // Set course title from the first lab title prefix, or fallback
+            document.getElementById("course-name").textContent = labs[0].COURSE_TITLE;
+            document.title = `${labs[0]?.COURSE_CODE || "Course"} - Labs`;
+            
+            // Show rubric section if there are graded labs
+            if (gradedLabs.length > 0) {
+                document.getElementById("rubric-section").style.display = "block";
+                displayRubricCards(gradedLabs);
+            }
+        }
+        
+        function displayRubricCards(gradedLabs) {
+            const container = document.getElementById("rubric-cards-container");
+            container.innerHTML = "";
+            
+            gradedLabs.forEach(lab => {
+                const rubricCard = document.createElement("div");
+                rubricCard.className = "lab-card";
+                rubricCard.style.cursor = "pointer";
+                rubricCard.style.borderLeft = "4px solid #667eea";
+                rubricCard.onclick = () => viewRubricScores(lab.SUBMISSION_ID);
+                rubricCard.innerHTML = `
+                    <h4>📊 Lab # ${lab.LAB_NO} - ${lab.LAB_TITLE}</h4>
+                    <p class="lab-title" style="color: #667eea; font-weight: bold;">View Detailed Rubric Scores</p>
+                    <p class="lab-title" style="font-size: 0.9em; color: #666;">Click to see criteria breakdown and feedback</p>
+                `;
+                container.appendChild(rubricCard);
+            });
+        }
+
+        function openLab(courseId, labNo) {
+            window.location.href = `/course/${courseId}/lab/${labNo}`;
+        }
+
+        fetchLabs();
+    </script>
+</body>
+
+</html>

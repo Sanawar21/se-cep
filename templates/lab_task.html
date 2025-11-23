@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Lab Task</title>
+    <link rel="stylesheet" href="/static/lab_task.css">
+    <style>
+        .custom-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2d3748;
+            color: white;
+            padding: 0.75em 1.5em;
+            font-family: Arial, sans-serif;
+            border-bottom: 2px solid #4a5568;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+
+        .custom-navbar .nav-btn {
+            background-color: #4a5568;
+            border: none;
+            color: white;
+            padding: 0.5em 1em;
+            font-size: 1em;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .custom-navbar .nav-btn:hover {
+            background-color: #2c5282;
+        }
+
+        .custom-navbar .back-btn {
+            margin-right: auto;
+        }
+
+        .custom-navbar .logout-btn {
+            margin-left: auto;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <nav class="custom-navbar">
+        <button class="nav-btn back-btn" id="history-back">← Back</button>
+        <h2>Computer & Information Systems Engineering Department</h2>
+        <button class="nav-btn logout-btn" onclick="window.location.href='/logout'">Logout</button>
+    </nav>
+
+    <div class="container">
+        <div class="course-info">
+            <h2 class="course-name" id="course-title"></h2>
+            <br>
+            <p><strong>Lab # <span class="lab-no" id="lab-no"></span>: <span class="lab-title"></span> </strong></p>
+        </div>
+
+        <form id="lab-form" method="post">
+            <div class="task-list" id="task-list">
+                <!-- Questions inserted dynamically -->
+            </div>
+
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("lab-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            formData.append("course_code", courseCode);
+            formData.append("lab_no", labNo);
+
+            try {
+                const response = await fetch("/api/submit_lab", {
+                    method: "POST",
+                    body: formData,
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert("Lab successfully submitted!");
+                    window.location.href = result.redirect;
+                } else {
+                    alert("Submission failed: " + result.message);
+                }
+            } catch (err) {
+                alert("An error occurred during submission.");
+            }
+        });
+    </script>
+    <script>
+        const parts = window.location.pathname.split("/");
+        const courseCode = parts[2];
+        const labNo = parts[4];
+
+        document.getElementById("course-title").textContent = courseCode;
+        document.getElementById("lab-no").textContent = labNo;
+        document.title = `Lab Task - ${courseCode}`;
+
+        async function loadQuestions() {
+            const response = await fetch(`/api/lab_tasks/${courseCode}/${labNo}`);
+            const data = await response.json();
+
+            if (!data.success || data.questions.length === 0) {
+                document.getElementById("task-list").innerHTML = "<p>No questions found.</p>";
+                return;
+            }
+
+            const courseName = data.questions[0].COURSE_TITLE;
+            const labTitle = data.questions[0].LAB_TITLE;
+            const submissionStatus = data.questions[0].SUBMISSION_STATUS;
+
+            document.querySelectorAll(".course-name").forEach(el => el.textContent = courseName);
+            document.querySelectorAll(".lab-title").forEach(el => el.textContent = labTitle);
+
+            const taskList = document.getElementById("task-list");
+
+            data.questions.forEach((q, index) => {
+                const div = document.createElement("div");
+                div.className = "task-item";
+
+                let html = `<p class="question"><strong>Q${index + 1}:</strong> ${q.QUESTION_TEXT}</p>`;
+
+                if (!submissionStatus) {
+                    // Allow submission
+                    html += `
+                    <textarea class="answer-box" name="answer_${q.TASK_NO}" placeholder="Write your answer here..." required></textarea>
+                `;
+                } else if (submissionStatus === "Submitted") {
+                    html += `
+                    <p><strong>Your Answer:</strong></p>
+                    <div class="submitted-answer">${q.ANSWER_TEXT || "Not Answered"}</div>
+                `;
+                } else if (submissionStatus === "Checked" || submissionStatus === "Graded") {
+                    const correctness = q.IS_CORRECT === 1 ? "✅ Correct" : "❌ Incorrect";
+                    html += `
+                    <p><strong>Your Answer:</strong></p>
+                    <div class="submitted-answer">${q.ANSWER_TEXT || "Not Answered"}</div>
+                    <p class="check-status">${correctness}</p>
+                `;
+                }
+
+                div.innerHTML = html;
+                taskList.appendChild(div);
+            });
+
+            // Remove submit button if already submitted or checked
+            if (submissionStatus) {
+                const btn = document.querySelector(".submit-btn");
+                if (btn) btn.remove();
+            }
+        }
+
+        loadQuestions();
+    </script>
+
+    <script>
+        document.getElementById("history-back").addEventListener("click", function () {
+            const courseCode = parts[2];
+            window.location.href = `/course/${courseCode}`;
+
+        });
+    </script>
+
+</body>
+
+</html>

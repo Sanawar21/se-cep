@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Check Submissions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/lab_task.css">
+  <style>
+    .custom-navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2d3748;
+      color: white;
+      padding: 0.75em 1.5em;
+      font-family: Arial, sans-serif;
+      border-bottom: 2px solid #4a5568;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+    }
+
+    .custom-navbar .nav-btn {
+      background-color: #4a5568;
+      border: none;
+      color: white;
+      padding: 0.5em 1em;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    .custom-navbar .nav-btn:hover {
+      background-color: #2c5282;
+    }
+
+    .custom-navbar .back-btn {
+      margin-right: auto;
+    }
+
+    .custom-navbar .logout-btn {
+      margin-left: auto;
+    }
+
+    /* Rubric Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 800px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: #000;
+    }
+
+    .rubric-selection {
+      margin: 20px 0;
+    }
+
+    .rubric-option {
+      padding: 15px;
+      margin: 10px 0;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .rubric-option:hover {
+      border-color: #4a5568;
+      background-color: #f7fafc;
+    }
+
+    .rubric-option.selected {
+      border-color: #02e202;
+      background-color: #f0fff4;
+    }
+
+    .criterion-score {
+      margin: 15px 0;
+      padding: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background-color: #f7fafc;
+    }
+
+    .criterion-score label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .criterion-score input[type="number"] {
+      width: 100px;
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+    }
+
+    .criterion-score textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .rubric-summary {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #edf2f7;
+      border-radius: 6px;
+      font-size: 1.1em;
+      font-weight: bold;
+    }
+
+    .btn-primary {
+      background-color: #4a5568;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .btn-primary:hover {
+      background-color: #2d3748;
+    }
+
+    .btn-success {
+      background-color: #02e202;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+
+    .btn-success:hover {
+      background-color: #01c201;
+    }
+
+    /* Rubric View Modal Styles */
+    .rubric-view-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .rubric-view-content {
+      background-color: #fefefe;
+      margin: 5% auto;
+      padding: 30px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .rubric-view-close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 20px;
+    }
+
+    .rubric-view-close:hover,
+    .rubric-view-close:focus {
+      color: #000;
+    }
+
+    .rubric-criterion-view {
+      padding: 15px;
+      margin: 15px 0;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background-color: #f7fafc;
+    }
+
+    .criterion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .criterion-header strong {
+      font-size: 1.1em;
+      color: #2d3748;
+    }
+
+    .criterion-score {
+      font-weight: bold;
+      color: #02e202;
+      font-size: 1.1em;
+    }
+
+    .criterion-description {
+      color: #666;
+      font-size: 0.95em;
+      margin: 8px 0;
+    }
+
+    .criterion-comments {
+      margin-top: 12px;
+      padding: 10px;
+      background-color: #fff;
+      border-left: 3px solid #02e202;
+      border-radius: 4px;
+    }
+
+    .rubric-summary-view {
+      margin: 25px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .rubric-summary-view h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.3em;
+    }
+
+    .rubric-score-display {
+      font-size: 2em;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .rubric-percentage {
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="custom-navbar">
+    <button class="nav-btn back-btn" id="history-back">← Back</button>
+    <h2>Computer & Information Systems Engineering Department</h2>
+    <button class="nav-btn logout-btn" onclick="window.location.href='/logout'">Logout</button>
+  </nav>
+
+  <div class="container">
+    <div class="course-info">
+      <h2 id="course-title"></h2>
+      <p><strong>Lab #<span id="lab-no"></span>: <span id="lab-title"></span></strong></p>
+      <p id="student-name"></p>
+    </div>
+    <div class="ai-check">
+      <button type="button" id="ai-check-btn" class="submit-btn">🤖 Check with AI</button>
+      <button type="button" id="attach-rubric-btn" class="submit-btn" style="background-color: rgb(2, 226, 2);">📎 Attach Rubric</button>
+      <button type="button" id="view-rubric-btn" class="submit-btn" style="background-color: #667eea; display: none;">📊 View Rubric Scores</button>
+    </div>
+
+
+    <p id="no-submissions" class="notice" style="display: none;">No student submissions found for this lab.</p>
+
+    <form id="check-form" method="post">
+      <div class="task-list" id="task-list">
+        <!-- Task items will be inserted here -->
+      </div>
+      <p id="no-submissions" class="notice" style="display: none;">No student submissions found for this lab.</p>
+
+      <div class="navigation">
+        <button type="button" id="prev-btn" disabled>&larr; Previous</button>
+        <button type="button" id="next-btn" disabled>Next &rarr;</button>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit Check</button>
+    </form>
+
+  </div>
+
+  <!-- Rubric Modal -->
+  <div id="rubric-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Apply Rubric Grading</h2>
+      <p><strong>Student:</strong> <span id="modal-student-name"></span></p>
+      
+      <div id="rubric-step-1" style="display: block;">
+        <h3>Step 1: Select a Rubric</h3>
+        <div id="rubric-list" class="rubric-selection">
+          <!-- Rubrics will be loaded here -->
+        </div>
+        <button type="button" class="btn-primary" id="select-rubric-btn" disabled>Continue to Grading</button>
+      </div>
+
+      <div id="rubric-step-2" style="display: none;">
+        <h3>Step 2: Score Each Criterion</h3>
+        <div id="rubric-criteria">
+          <!-- Criteria will be loaded here -->
+        </div>
+        <div class="rubric-summary">
+          Total Score: <span id="total-score">0</span> / <span id="max-score">0</span>
+        </div>
+        <button type="button" class="btn-primary" id="back-to-rubrics">← Back to Rubric Selection</button>
+        <button type="button" class="btn-success" id="submit-rubric-btn">Submit Rubric Grading</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rubric View Modal -->
+  <div id="rubric-view-modal" class="rubric-view-modal">
+    <div class="rubric-view-content">
+      <span class="rubric-view-close" onclick="closeRubricModal()">&times;</span>
+      <h2>Rubric Scores</h2>
+      
+      <div class="rubric-summary-view">
+        <h3>Total Score</h3>
+        <div class="rubric-score-display">
+          <span id="rubric-total-score">0</span> / <span id="rubric-max-score">0</span>
+        </div>
+        <div class="rubric-percentage">
+          <span id="rubric-percentage">0</span>%
+        </div>
+      </div>
+
+      <h3>Criteria Breakdown</h3>
+      <div id="rubric-criteria-view">
+        <!-- Criteria will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/rubric_viewer.js"></script>
+  <script>
+    const parts = window.location.pathname.split("/");
+    const courseCode = parts[3];
+    const labNo = parts[4];
+
+    document.getElementById("history-back").addEventListener("click", () => {
+      window.location.href = `/teacher/${courseCode}/labs`;
+    });
+
+    fetch(`/api/course_name/${courseCode}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById("course-title").textContent = `${data.course_name} (${courseCode})`;
+        } else {
+          document.getElementById("course-title").textContent = `Course: ${courseCode}`;
+        }
+      });
+
+
+    document.getElementById("lab-no").textContent = labNo;
+
+    // Get button references early for use in loadStudent
+    const attachRubricBtn = document.getElementById("attach-rubric-btn");
+
+    let submissions = [];
+    let currentIndex = 0;
+
+    async function fetchSubmissions() {
+      const res = await fetch(`/api/submissions/${courseCode}/${labNo}`);
+      const data = await res.json();
+      submissions = data.submissions || [];
+
+
+      submissions.sort((a, b) => {
+        if (a.SUBMISSION_STATUS === "Submitted" && b.SUBMISSION_STATUS !== "Submitted") return -1;
+        if (a.SUBMISSION_STATUS !== "Submitted" && b.SUBMISSION_STATUS === "Submitted") return 1;
+        return 0;
+      });
+
+
+      if (submissions.length === 0) {
+        document.getElementById("no-submissions").style.display = "block";
+        document.getElementById("check-form").style.display = "none";
+      } else {
+        document.getElementById("no-submissions").style.display = "none";
+        document.getElementById("check-form").style.display = "block";
+        loadStudent();
+      }
+    }
+
+    function loadStudent() {
+      const student = submissions[currentIndex];
+      document.getElementById("student-name").textContent = `Student: ${student.STUDENT_NAME} (${student.ROLL_NO})`;
+      document.getElementById("lab-title").textContent = student.LAB_TITLE;
+
+      // Show/hide buttons based on grading status
+      const viewRubricBtn = document.getElementById("view-rubric-btn");
+      const attachRubricBtn = document.getElementById("attach-rubric-btn");
+      
+      if (student.SUBMISSION_ID && (student.SUBMISSION_STATUS === 'Graded')) {
+        // Already graded - show view button, hide attach button
+        viewRubricBtn.style.display = "inline-block";
+        viewRubricBtn.onclick = () => viewRubricScores(student.SUBMISSION_ID);
+        attachRubricBtn.style.display = "none";
+      } else {
+        // Not graded yet - hide view button, show attach button
+        viewRubricBtn.style.display = "none";
+        attachRubricBtn.style.display = "inline-block";
+      }
+
+      const taskList = document.getElementById("task-list");
+      taskList.innerHTML = "";
+
+      if (!student.questions || student.questions.length === 0) {
+        taskList.innerHTML = `<p class="notice">This student hasn't submitted any answers.</p>`;
+        return;
+      }
+
+      student.questions.forEach((q, index) => {
+        const div = document.createElement("div");
+        div.className = "task-item";
+
+        div.innerHTML = `
+          <p><strong>Q${index + 1}:</strong> ${q.QUESTION_TEXT}</p>
+          <p><strong>Answer:</strong></p>
+          <div class="submitted-answer">${q.ANSWER_TEXT || "Not Answered"}</div>
+          <div class="marking">
+            <label><input type="radio" name="q_${q.TASK_NO}" value="1" ${q.IS_CORRECT === 1 ? "checked" : ""}> ✅ Correct</label>
+            <label><input type="radio" name="q_${q.TASK_NO}" value="0" ${q.IS_CORRECT === 0 ? "checked" : ""}> ❌ Incorrect</label>
+          </div>
+        `;
+        taskList.appendChild(div);
+      });
+
+      updateNavButtons();
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled = currentIndex === submissions.length - 1;
+    }
+
+    document.getElementById("prev-btn").addEventListener("click", () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        loadStudent();
+      }
+    });
+
+    document.getElementById("next-btn").addEventListener("click", () => {
+      if (currentIndex < submissions.length - 1) {
+        currentIndex++;
+        loadStudent();
+      }
+    });
+
+    document.getElementById("check-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const student = submissions[currentIndex];
+      const formData = new FormData(e.target);
+      const result = [];
+      let someUnchecked = false;
+
+      student.questions.forEach(q => {
+        const correctness = formData.get(`q_${q.TASK_NO}`);
+        if (correctness !== null && !someUnchecked) {
+          result.push({
+            roll_no: student.ROLL_NO,
+            course_code: courseCode,
+            lab_no: labNo,
+            task_no: q.TASK_NO,
+            is_correct: parseInt(correctness)
+          });
+        } else {
+          if (!someUnchecked) {
+
+            alert("All answers must be marked before submission.")
+            someUnchecked = true;
+          }
+        }
+      });
+
+      if (someUnchecked) {
+        return
+      }
+
+      const response = await fetch("/api/check_submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ results: result })
+      });
+
+      const json = await response.json();
+      alert(json.success ? "Marked successfully!" : "Check failed.");
+      if (json.success) {
+        student.questions.forEach(q => {
+          const correctness = result.find(r => r.task_no === q.TASK_NO);
+          if (correctness) {
+            q.IS_CORRECT = correctness.is_correct;
+          }
+        });
+        document.getElementById("next-btn").click()
+      }
+    });
+
+    document.getElementById("ai-check-btn").addEventListener("click", async () => {
+      const student = submissions[currentIndex];
+      if (!student.questions || student.questions.length === 0) {
+        alert("This student hasn't submitted any answers.");
+        return;
+      }
+
+      const questions = student.questions.map(q => q.QUESTION_TEXT);
+      const answers = student.questions.map(q => q.ANSWER_TEXT || "");
+
+      const res = await fetch("/api/teacher/ai_check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questions, answers })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        alert("AI check failed.");
+        return;
+      }
+
+      const aiResults = data.results;
+      const taskItems = document.querySelectorAll("#task-list .task-item");
+
+      taskItems.forEach((div, i) => {
+        const correct = aiResults[i];
+        const radios = div.querySelectorAll(`input[name="q_${student.questions[i].TASK_NO}"]`);
+        radios.forEach(r => {
+          r.checked = parseInt(r.value) === correct;
+        });
+      });
+
+      alert("AI check complete. Answers have been auto-marked.");
+    });
+
+
+    // Rubric functionality
+    let availableRubrics = [];
+    let selectedRubric = null;
+
+    const modal = document.getElementById("rubric-modal");
+    const closeModal = document.querySelector(".close");
+    const selectRubricBtn = document.getElementById("select-rubric-btn");
+    const backToRubricsBtn = document.getElementById("back-to-rubrics");
+    const submitRubricBtn = document.getElementById("submit-rubric-btn");
+
+    closeModal.onclick = function () {
+      modal.style.display = "none";
+      resetRubricModal();
+    };
+
+    window.onclick = function (event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+        resetRubricModal();
+      }
+    };
+
+    attachRubricBtn.addEventListener("click", async () => {
+      const student = submissions[currentIndex];
+      if (!student) {
+        alert("No student selected.");
+        return;
+      }
+
+      // Check if binary checking is done first
+      const hasUnchecked = student.questions.some(q => q.IS_CORRECT === null || q.IS_CORRECT === undefined);
+      if (hasUnchecked) {
+        alert("Please complete binary checking (mark all answers as correct/incorrect) before applying rubric grading.");
+        return;
+      }
+
+      document.getElementById("modal-student-name").textContent = `${student.STUDENT_NAME} (${student.ROLL_NO})`;
+
+      // Fetch available rubrics
+      const res = await fetch(`/api/teacher/rubrics/${courseCode}/${labNo}`);
+      const data = await res.json();
+
+      if (!data.success || !data.rubrics || data.rubrics.length === 0) {
+        alert("No rubrics available for this lab. Please create a rubric first.");
+        return;
+      }
+
+      availableRubrics = data.rubrics;
+      displayRubrics();
+      modal.style.display = "block";
+    });
+
+    function displayRubrics() {
+      const rubricList = document.getElementById("rubric-list");
+      rubricList.innerHTML = "";
+
+      availableRubrics.forEach(rubric => {
+        const div = document.createElement("div");
+        div.className = "rubric-option";
+        div.innerHTML = `
+          <h4>${rubric.RUBRIC_NAME}</h4>
+          <p>${rubric.DESCRIPTION || "No description"}</p>
+          <p><strong>Criteria:</strong> ${rubric.criteria.length}</p>
+          <p><strong>Total Points:</strong> ${rubric.criteria.reduce((sum, c) => sum + c.MAX_SCORE, 0)}</p>
+        `;
+        div.onclick = function () {
+          document.querySelectorAll(".rubric-option").forEach(opt => opt.classList.remove("selected"));
+          div.classList.add("selected");
+          selectedRubric = rubric;
+          selectRubricBtn.disabled = false;
+        };
+        rubricList.appendChild(div);
+      });
+    }
+
+    selectRubricBtn.addEventListener("click", () => {
+      if (!selectedRubric) return;
+
+      document.getElementById("rubric-step-1").style.display = "none";
+      document.getElementById("rubric-step-2").style.display = "block";
+      displayCriteria();
+    });
+
+    backToRubricsBtn.addEventListener("click", () => {
+      document.getElementById("rubric-step-2").style.display = "none";
+      document.getElementById("rubric-step-1").style.display = "block";
+    });
+
+    function displayCriteria() {
+      const criteriaDiv = document.getElementById("rubric-criteria");
+      criteriaDiv.innerHTML = "";
+
+      let maxScore = 0;
+
+      selectedRubric.criteria.forEach(criterion => {
+        maxScore += criterion.MAX_SCORE;
+
+        const div = document.createElement("div");
+        div.className = "criterion-score";
+        div.innerHTML = `
+          <label>${criterion.CRITERION_NAME} (Max: ${criterion.MAX_SCORE} points)</label>
+          <p style="color: #666; font-size: 0.9em;">${criterion.DESCRIPTION || ""}</p>
+          <div>
+            <input type="number" 
+                   id="score_${criterion.CRITERION_ID}" 
+                   min="0" 
+                   max="${criterion.MAX_SCORE}" 
+                   value="0" 
+                   data-max="${criterion.MAX_SCORE}">
+            <span>/ ${criterion.MAX_SCORE} points</span>
+          </div>
+          <textarea id="comment_${criterion.CRITERION_ID}" 
+                    placeholder="Optional comments for this criterion..." 
+                    rows="2"></textarea>
+        `;
+        criteriaDiv.appendChild(div);
+
+        // Add event listener for score input
+        const scoreInput = div.querySelector(`#score_${criterion.CRITERION_ID}`);
+        scoreInput.addEventListener("input", updateTotalScore);
+      });
+
+      document.getElementById("max-score").textContent = maxScore;
+      updateTotalScore();
+    }
+
+    function updateTotalScore() {
+      let total = 0;
+      selectedRubric.criteria.forEach(criterion => {
+        const input = document.getElementById(`score_${criterion.CRITERION_ID}`);
+        if (input) {
+          const value = parseInt(input.value) || 0;
+          const max = parseInt(input.dataset.max);
+          // Clamp value between 0 and max
+          if (value > max) input.value = max;
+          if (value < 0) input.value = 0;
+          total += parseInt(input.value) || 0;
+        }
+      });
+      document.getElementById("total-score").textContent = total;
+    }
+
+    submitRubricBtn.addEventListener("click", async () => {
+      const student = submissions[currentIndex];
+      const scores = [];
+
+      selectedRubric.criteria.forEach(criterion => {
+        const scoreInput = document.getElementById(`score_${criterion.CRITERION_ID}`);
+        const commentInput = document.getElementById(`comment_${criterion.CRITERION_ID}`);
+
+        scores.push({
+          criterion_id: criterion.CRITERION_ID,
+          score: parseInt(scoreInput.value) || 0,
+          comments: commentInput.value || ""
+        });
+      });
+
+      const res = await fetch("/api/teacher/grade_with_rubric", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submission_id: student.SUBMISSION_ID,
+          scores: scores
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(`Rubric grading submitted successfully! Total Score: ${data.total_score}`);
+        student.SUBMISSION_STATUS = "Graded";
+        modal.style.display = "none";
+        resetRubricModal();
+      } else {
+        alert("Failed to submit rubric grading: " + data.message);
+      }
+    });
+
+    function resetRubricModal() {
+      document.getElementById("rubric-step-1").style.display = "block";
+      document.getElementById("rubric-step-2").style.display = "none";
+      document.querySelectorAll(".rubric-option").forEach(opt => opt.classList.remove("selected"));
+      selectedRubric = null;
+      selectRubricBtn.disabled = true;
+    }
+
+
+    fetchSubmissions();
+  </script>
+</body>
+
+</html>

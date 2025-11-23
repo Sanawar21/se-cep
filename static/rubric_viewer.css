@@ -1,0 +1,128 @@
+/* Rubric Viewer Styles */
+.rubric-view-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.rubric-view-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 30px;
+  border: 1px solid #888;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.rubric-view-close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 20px;
+}
+
+.rubric-view-close:hover,
+.rubric-view-close:focus {
+  color: #000;
+}
+
+.rubric-criterion-view {
+  padding: 15px;
+  margin: 15px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #f7fafc;
+}
+
+.criterion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.criterion-header strong {
+  font-size: 1.1em;
+  color: #2d3748;
+}
+
+.criterion-score {
+  font-weight: bold;
+  color: #02e202;
+  font-size: 1.1em;
+}
+
+.criterion-description {
+  color: #666;
+  font-size: 0.95em;
+  margin: 8px 0;
+}
+
+.criterion-comments {
+  margin-top: 12px;
+  padding: 10px;
+  background-color: #fff;
+  border-left: 3px solid #02e202;
+  border-radius: 4px;
+}
+
+.criterion-comments strong {
+  color: #2d3748;
+}
+
+.rubric-summary-view {
+  margin: 25px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.rubric-summary-view h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.3em;
+}
+
+.rubric-score-display {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.rubric-percentage {
+  font-size: 1.2em;
+  opacity: 0.9;
+}
+
+.view-rubric-btn {
+  background-color: #667eea;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95em;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.view-rubric-btn:hover {
+  background-color: #5568d3;
+}
+
+.view-rubric-btn:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}

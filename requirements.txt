@@ -1,0 +1,9 @@
+mysql-connector-python 
+faker
+python-dotenv
+fastapi
+uvicorn
+jinja2
+python-multipart
+itsdangerous
+google-genai

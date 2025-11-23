@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Create Rubric</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/lab_task.css">
+  <style>
+    .custom-navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #2d3748;
+      color: white;
+      padding: 0.75em 1.5em;
+      font-family: Arial, sans-serif;
+      border-bottom: 2px solid #4a5568;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      width: 100%;
+    }
+
+    .custom-navbar .nav-btn {
+      background-color: #4a5568;
+      border: none;
+      color: white;
+      padding: 0.5em 1em;
+      font-size: 1em;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    .custom-navbar .nav-btn:hover {
+      background-color: #2c5282;
+    }
+
+    .form-group {
+      margin: 20px 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+
+    .criterion-item {
+      padding: 15px;
+      margin: 15px 0;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      background-color: #f7fafc;
+      position: relative;
+    }
+
+    .criterion-item h4 {
+      margin-top: 0;
+    }
+
+    .remove-criterion {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #e53e3e;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .remove-criterion:hover {
+      background-color: #c53030;
+    }
+
+    .add-criterion-btn {
+      background-color: #02e202;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 10px 0;
+    }
+
+    .add-criterion-btn:hover {
+      background-color: #01c201;
+    }
+
+    .submit-btn {
+      background-color: #4a5568;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1em;
+      margin-top: 20px;
+    }
+
+    .submit-btn:hover {
+      background-color: #2d3748;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="custom-navbar">
+    <button class="nav-btn back-btn" id="history-back">← Back</button>
+    <h2>Create Rubric</h2>
+    <button class="nav-btn logout-btn" onclick="window.location.href='/logout'">Logout</button>
+  </nav>
+
+  <div class="container">
+    <h2 id="course-title">Create New Rubric</h2>
+
+    <form id="rubric-form">
+      <div class="form-group">
+        <label for="rubric-name">Rubric Name *</label>
+        <input type="text" id="rubric-name" required placeholder="e.g., Database Design Rubric">
+      </div>
+
+      <div class="form-group">
+        <label for="lab-no">Lab Number *</label>
+        <input type="number" id="lab-no" required placeholder="e.g., 1" min="1">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" rows="3" placeholder="Optional description of this rubric..."></textarea>
+      </div>
+
+      <h3>Criteria</h3>
+      <p style="color: #666;">Add evaluation criteria for this rubric. Each criterion should have a name, description, and maximum score.</p>
+
+      <div id="criteria-list">
+        <!-- Criteria will be added here -->
+      </div>
+
+      <button type="button" class="add-criterion-btn" id="add-criterion">+ Add Criterion</button>
+
+      <div>
+        <button type="submit" class="submit-btn">Create Rubric</button>
+      </div>
+    </form>
+
+  </div>
+
+  <script>
+    const parts = window.location.pathname.split("/");
+    const courseCode = parts[2];
+
+    document.getElementById("history-back").addEventListener("click", () => {
+      window.location.href = `/teacher/${courseCode}`;
+    });
+
+    fetch(`/api/course_name/${courseCode}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById("course-title").textContent = `Create Rubric for ${data.course_name}`;
+        }
+      });
+
+    let criterionCount = 0;
+
+    document.getElementById("add-criterion").addEventListener("click", () => {
+      criterionCount++;
+      const criteriaList = document.getElementById("criteria-list");
+
+      const criterionDiv = document.createElement("div");
+      criterionDiv.className = "criterion-item";
+      criterionDiv.id = `criterion-${criterionCount}`;
+      criterionDiv.innerHTML = `
+        <button type="button" class="remove-criterion" onclick="removeCriterion(${criterionCount})">✕</button>
+        <h4>Criterion ${criterionCount}</h4>
+        <div class="form-group">
+          <label>Criterion Name *</label>
+          <input type="text" class="criterion-name" required placeholder="e.g., Code Quality">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="criterion-description" rows="2" placeholder="Describe what this criterion evaluates..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Maximum Score *</label>
+          <input type="number" class="criterion-max-score" required placeholder="e.g., 25" min="1">
+        </div>
+      `;
+      criteriaList.appendChild(criterionDiv);
+    });
+
+    window.removeCriterion = function (id) {
+      document.getElementById(`criterion-${id}`).remove();
+    };
+
+    // Add one criterion by default
+    document.getElementById("add-criterion").click();
+
+    document.getElementById("rubric-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const rubricName = document.getElementById("rubric-name").value;
+      const labNo = parseInt(document.getElementById("lab-no").value);
+      const description = document.getElementById("description").value;
+
+      const criteriaElements = document.querySelectorAll(".criterion-item");
+      const criteria = [];
+
+      criteriaElements.forEach(div => {
+        const name = div.querySelector(".criterion-name").value;
+        const desc = div.querySelector(".criterion-description").value;
+        const maxScore = parseInt(div.querySelector(".criterion-max-score").value);
+
+        if (name && maxScore) {
+          criteria.push({
+            criterion_name: name,
+            description: desc,
+            max_score: maxScore
+          });
+        }
+      });
+
+      if (criteria.length === 0) {
+        alert("Please add at least one criterion.");
+        return;
+      }
+
+      const data = {
+        rubric_name: rubricName,
+        course_code: courseCode,
+        lab_no: labNo,
+        description: description,
+        criteria: criteria
+      };
+
+      const res = await fetch("/api/teacher/rubric/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert("Rubric created successfully!");
+        window.location.href = `/teacher/${courseCode}`;
+      } else {
+        alert("Failed to create rubric: " + result.message);
+      }
+    });
+  </script>
+</body>
+
+</html>
